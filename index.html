@@ -409,9 +409,17 @@
 
       <!-- Drafts list -->
       <div x-show="drafts.length" class="space-y-3 mb-20">
-        <div class="flex justify-between items-center">
-          <div class="text-sm font-semibold">
-            <span class="num" x-text="drafts.length"></span> ပုံ ပြင်ဆင်ပြီး
+        <div class="flex justify-between items-center text-sm">
+          <div class="flex items-center gap-3">
+            <span class="font-semibold">
+              <span class="num" x-text="drafts.length"></span> ပုံ
+            </span>
+            <span x-show="readyCount > 0" class="pill pill-good text-[10px]">
+              <span class="num" x-text="readyCount"></span> Saved
+            </span>
+            <span x-show="unsavedCount > 0" class="pill pill-warn text-[10px]">
+              <span class="num" x-text="unsavedCount"></span> Unsaved
+            </span>
           </div>
           <button @click="loadDrafts()" class="tap text-xs px-3 py-1.5 rounded-lg" style="color: var(--muted); border: 1px solid var(--line)">
             ↻ Refresh
@@ -419,72 +427,115 @@
         </div>
 
         <template x-for="d in drafts" :key="d.draft_id">
-          <div class="card overflow-hidden">
+          <div class="card overflow-hidden" :class="d._justSaved ? 'ring-2 ring-green-300' : ''" style="transition: all 0.3s">
             <div class="flex">
-              <div class="w-28 h-28 bg-zinc-100 shrink-0">
+              <div class="w-28 h-28 bg-zinc-100 shrink-0 relative">
                 <img :src="d.public_url" class="w-full h-full object-cover" loading="lazy" @error="$el.style.display='none'">
+                <div class="absolute bottom-1 left-1 right-1 text-center">
+                  <span x-show="d._saved && !d._dirty" class="pill pill-good text-[9px]">✓ Saved</span>
+                  <span x-show="!d._saved || d._dirty" class="pill pill-warn text-[9px]">Unsaved</span>
+                </div>
               </div>
               <div class="flex-1 p-3 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
                   <span class="num text-xs font-bold" x-text="d.suggested_item_code"></span>
                   <span class="pill pill-info text-[10px]" x-text="`AI ${Math.round((d.ai_confidence||0)*100)}%`"></span>
                 </div>
-                <div class="text-xs" style="color: var(--muted)" x-text="d.detected_color_burmese + ' • ' + d.detected_category"></div>
+                <div class="text-xs" style="color: var(--muted)" x-text="(d.detected_color_burmese || '-') + ' • ' + (d.detected_category || '-')"></div>
               </div>
             </div>
             <div class="p-3 space-y-2 border-t" style="border-color: var(--line)">
               <div class="grid grid-cols-2 gap-2">
                 <div>
-                  <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">Item Code</label>
-                  <input type="text" x-model="d.item_code" class="num w-full px-2 py-1.5 rounded border text-sm" style="border-color: var(--line)">
+                  <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">Item Code <span class="text-red-500">*</span></label>
+                  <input type="text" x-model="d.item_code" @input="markDirty(d)" class="num w-full px-2 py-1.5 rounded border text-sm" style="border-color: var(--line)">
+                </div>
+                <div>
+                  <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">အမျိုးအစား <span class="text-red-500">*</span></label>
+                  <select x-model="d.category" @change="markDirty(d)" class="w-full px-2 py-1.5 rounded border text-sm bg-white" style="border-color: var(--line)">
+                    <option value="">—</option>
+                    <option value="ပါတိတ်">ပါတိတ်</option>
+                    <option value="ထဘီ">ထဘီ</option>
+                    <option value="ဝမ်းဆက်">ဝမ်းဆက်</option>
+                    <option value="အိမ်နေဝတ်စုံ">အိမ်နေဝတ်စုံ</option>
+                    <option value="အခြား">အခြား</option>
+                  </select>
                 </div>
                 <div>
                   <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">အရောင်</label>
-                  <input type="text" x-model="d.color" class="w-full px-2 py-1.5 rounded border text-sm" style="border-color: var(--line)">
+                  <input type="text" x-model="d.color" @input="markDirty(d)" placeholder="အမဲရောင်" class="w-full px-2 py-1.5 rounded border text-sm" style="border-color: var(--line)">
                 </div>
                 <div>
                   <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">Size</label>
-                  <select x-model="d.size" class="w-full px-2 py-1.5 rounded border text-sm bg-white" style="border-color: var(--line)">
-                    <option value="">—</option>
-                    <option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>Free</option>
+                  <select x-model="d.size" @change="markDirty(d)" class="w-full px-2 py-1.5 rounded border text-sm bg-white" style="border-color: var(--line)">
+                    <option value="Free">Free</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="XXL">XXL</option>
+                    <option value="M-L">M-L</option>
+                    <option value="L-XL">L-XL</option>
                   </select>
                 </div>
                 <div>
                   <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">စတော့</label>
-                  <input type="number" x-model.number="d.stock" min="0" class="num w-full px-2 py-1.5 rounded border text-sm" style="border-color: var(--line)">
+                  <input type="number" x-model.number="d.stock" @input="markDirty(d)" min="0" class="num w-full px-2 py-1.5 rounded border text-sm" style="border-color: var(--line)">
                 </div>
-                <div class="col-span-2">
-                  <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">စျေးနှုန်း (Ks)</label>
-                  <input type="number" x-model.number="d.price" min="0" class="num w-full px-2 py-1.5 rounded border text-sm" style="border-color: var(--line)">
+                <div>
+                  <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">စျေး (Ks) <span class="text-red-500">*</span></label>
+                  <input type="number" x-model.number="d.price" @input="markDirty(d)" min="0" placeholder="12000" class="num w-full px-2 py-1.5 rounded border text-sm" style="border-color: var(--line)">
                 </div>
               </div>
 
-              <div>
-                <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">ဝတ်ဆင်နိုင်တဲ့ Body</label>
-                <div class="grid grid-cols-3 gap-2 mt-1">
+              <details class="group">
+                <summary class="cursor-pointer text-[11px] font-semibold flex items-center gap-1 select-none py-1" style="color: var(--muted)">
+                  <span class="transition-transform group-open:rotate-90">▸</span>
+                  ဝတ်ဆင်နိုင်တဲ့ Body (ပေါင်/ရင်/ခါး)
+                </summary>
+                <div class="mt-2 space-y-2 pl-2">
                   <div>
-                    <input type="number" x-model.number="d.weight_min" placeholder="ပေါင် min" class="num w-full px-2 py-1.5 rounded border text-xs" style="border-color: var(--line)">
+                    <div class="text-[10px] uppercase tracking-wider mb-1" style="color: var(--muted)">ပေါင် (kg)</div>
+                    <div class="grid grid-cols-2 gap-2">
+                      <input type="number" x-model.number="d.weight_min" @input="markDirty(d)" placeholder="အနည်းဆုံး" step="0.5" class="num w-full px-2 py-1.5 rounded border text-xs" style="border-color: var(--line)">
+                      <input type="number" x-model.number="d.weight_max" @input="markDirty(d)" placeholder="အများဆုံး" step="0.5" class="num w-full px-2 py-1.5 rounded border text-xs" style="border-color: var(--line)">
+                    </div>
                   </div>
                   <div>
-                    <input type="number" x-model.number="d.chest_min" placeholder="ရင်ဘတ်" class="num w-full px-2 py-1.5 rounded border text-xs" style="border-color: var(--line)">
+                    <div class="text-[10px] uppercase tracking-wider mb-1" style="color: var(--muted)">ရင်ဘတ် (cm)</div>
+                    <div class="grid grid-cols-2 gap-2">
+                      <input type="number" x-model.number="d.chest_min" @input="markDirty(d)" placeholder="min" class="num w-full px-2 py-1.5 rounded border text-xs" style="border-color: var(--line)">
+                      <input type="number" x-model.number="d.chest_max" @input="markDirty(d)" placeholder="max" class="num w-full px-2 py-1.5 rounded border text-xs" style="border-color: var(--line)">
+                    </div>
                   </div>
                   <div>
-                    <input type="number" x-model.number="d.waist_min" placeholder="ခါး" class="num w-full px-2 py-1.5 rounded border text-xs" style="border-color: var(--line)">
+                    <div class="text-[10px] uppercase tracking-wider mb-1" style="color: var(--muted)">ခါး (cm)</div>
+                    <div class="grid grid-cols-2 gap-2">
+                      <input type="number" x-model.number="d.waist_min" @input="markDirty(d)" placeholder="min" class="num w-full px-2 py-1.5 rounded border text-xs" style="border-color: var(--line)">
+                      <input type="number" x-model.number="d.waist_max" @input="markDirty(d)" placeholder="max" class="num w-full px-2 py-1.5 rounded border text-xs" style="border-color: var(--line)">
+                    </div>
                   </div>
                 </div>
-              </div>
+              </details>
 
               <div>
                 <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">ပစ္စည်းအကြောင်း</label>
-                <textarea x-model="d.knowledge" rows="2" placeholder="အပူသိပ်/နွေသုံး/ပိုးထည် စသဖြင့်" class="w-full px-2 py-1.5 rounded border text-sm resize-none" style="border-color: var(--line)"></textarea>
+                <textarea x-model="d.knowledge" @input="markDirty(d)" rows="2" placeholder="အပူသိပ်/နွေသုံး/ပိုးထည် စသဖြင့်" class="w-full px-2 py-1.5 rounded border text-sm resize-none" style="border-color: var(--line)"></textarea>
               </div>
 
               <div class="flex gap-2 pt-1">
                 <button @click="deleteDraft(d)" class="tap py-2 px-3 rounded-lg text-xs font-semibold border" style="border-color: var(--line); color: var(--bad)">
                   ဖျက်
                 </button>
-                <button @click="saveDraft(d)" class="tap flex-1 py-2 rounded-lg text-xs font-semibold border" style="border-color: var(--line)">
-                  Save
+                <button
+                  @click="saveDraft(d)"
+                  :disabled="d._saving || (d._saved && !d._dirty)"
+                  class="tap flex-1 py-2 rounded-lg text-xs font-semibold disabled:opacity-50"
+                  :class="(d._dirty || !d._saved) ? 'text-white' : 'border'"
+                  :style="(d._dirty || !d._saved) ? 'background: var(--ink)' : 'border-color: var(--line); color: var(--muted)'">
+                  <span x-show="!d._saving && (!d._saved || d._dirty)">Save</span>
+                  <span x-show="!d._saving && d._saved && !d._dirty">✓ Saved</span>
+                  <span x-show="d._saving">Saving…</span>
                 </button>
               </div>
             </div>
@@ -493,14 +544,15 @@
       </div>
 
       <!-- Done button -->
-      <div x-show="drafts.length" class="fixed left-0 right-0 bottom-16 px-4 z-20">
+      <div x-show="readyCount > 0" class="fixed left-0 right-0 bottom-16 px-4 z-20">
         <button
           @click="publishAll()"
           :disabled="publishing"
           class="tap w-full py-4 rounded-2xl text-white font-bold shadow-lg disabled:opacity-50"
           style="background: var(--ink)">
           <span x-show="!publishing">
-            <span class="num" x-text="drafts.length"></span> ပုံကို Done အဖြစ် သိမ်း
+            <span class="num" x-text="readyCount"></span> ပုံကို Publish လုပ်
+            <span x-show="unsavedCount > 0" class="text-xs font-normal opacity-70">(<span class="num" x-text="unsavedCount"></span> ပုံ save လုပ်ဖို့ ကျန်)</span>
           </span>
           <span x-show="publishing">တင်နေသည်…</span>
         </button>
@@ -905,31 +957,75 @@ function dashboard() {
         });
         const data = await r.json();
         const list = Array.isArray(data) ? data : (data.drafts || data.data || []);
-        // attach arrival_date default
         this.drafts = list.map(d => ({
           ...d,
           arrival_date: this.uploadDate,
-          weight_min: d.weight_min ?? null,
-          chest_min: d.chest_min ?? null,
-          waist_min: d.waist_min ?? null,
+          item_code: d.item_code || d.suggested_item_code || '',
+          variant_id: d.variant_id || d.suggested_variant_id || '',
+          category: d.category || d.detected_category || '',
+          color: d.color || d.detected_color_burmese || '',
+          size: d.size || 'Free',
           price: d.price ?? null,
           stock: d.stock ?? 1,
-          knowledge: d.knowledge || ''
+          knowledge: d.knowledge || '',
+          weight_min: d.weight_min ?? null,
+          weight_max: d.weight_max ?? null,
+          chest_min: d.chest_min ?? null,
+          chest_max: d.chest_max ?? null,
+          waist_min: d.waist_min ?? null,
+          waist_max: d.waist_max ?? null,
+          _saved: d.status === 'edited' || d.status === 'approved',
+          _dirty: false,
+          _saving: false,
+          _justSaved: false
         }));
       } catch (e) {
         this.drafts = [];
       }
     },
+    markDirty(d) {
+      d._dirty = true;
+      d._saved = false;
+    },
+    validateDraft(d) {
+      if (!d.item_code || !String(d.item_code).trim()) return 'Item Code လို';
+      if (!d.category) return 'အမျိုးအစား ရွေး';
+      if (!d.price || Number(d.price) <= 0) return 'စျေးနှုန်း ထည့်';
+      return null;
+    },
     async saveDraft(d) {
+      const err = this.validateDraft(d);
+      if (err) { this.showToast(err, 'bad'); return; }
+      d._saving = true;
       try {
+        const patch = {
+          item_code: String(d.item_code).trim(),
+          variant_id: String(d.item_code).trim(),
+          category: d.category,
+          color: d.color || null,
+          size: d.size || 'Free',
+          price: d.price,
+          stock: d.stock || 1,
+          knowledge: d.knowledge || null,
+          weight_min: d.weight_min, weight_max: d.weight_max,
+          chest_min: d.chest_min, chest_max: d.chest_max,
+          waist_min: d.waist_min, waist_max: d.waist_max,
+          arrival_date: this.uploadDate
+        };
         await fetch(CONFIG.N8N_BASE + '/webhook/uthuya-drafts-api', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'update', draft_id: d.draft_id, payload: d })
+          body: JSON.stringify({ action: 'update', draft_id: d.draft_id, payload: patch, patch: patch })
         });
+        d._saved = true;
+        d._dirty = false;
+        d._justSaved = true;
+        setTimeout(() => { d._justSaved = false; }, 1500);
         this.showToast('Save လုပ်ပြီး', 'good');
       } catch (e) {
         this.showToast('Save မရ', 'bad');
+      } finally {
+        d._saving = false;
       }
     },
     async deleteDraft(d) {
@@ -947,31 +1043,30 @@ function dashboard() {
       }
     },
     async publishAll() {
-      if (!this.drafts.length) return;
+      const ready = this.drafts.filter(d => d._saved && !d._dirty);
+      if (!ready.length) {
+        this.showToast('Save လုပ်ပြီးတဲ့ ပစ္စည်းမရှိ', 'bad');
+        return;
+      }
       this.publishing = true;
       try {
-        // save all first
-        for (const d of this.drafts) {
-          await fetch(CONFIG.N8N_BASE + '/webhook/uthuya-drafts-api', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'update', draft_id: d.draft_id, payload: { ...d, arrival_date: this.uploadDate } })
-          });
-        }
-        // then publish
         await fetch(CONFIG.N8N_BASE + '/webhook/uthuya-drafts-api', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'publish', draft_ids: this.drafts.map(d => d.draft_id) })
+          body: JSON.stringify({ action: 'publish', draft_ids: ready.map(d => d.draft_id) })
         });
-        this.showToast(`${this.drafts.length} ပုံ ပြီးပါပြီ`, 'good');
-        this.drafts = [];
+        this.showToast(`${ready.length} ပုံ ပြီးပါပြီ`, 'good');
+        // Remove published drafts from list
+        const publishedIds = new Set(ready.map(d => d.draft_id));
+        this.drafts = this.drafts.filter(d => !publishedIds.has(d.draft_id));
       } catch (e) {
         this.showToast('Publish မရ: ' + e.message, 'bad');
       } finally {
         this.publishing = false;
       }
     },
+    get readyCount() { return this.drafts.filter(d => d._saved && !d._dirty).length; },
+    get unsavedCount() { return this.drafts.filter(d => !d._saved || d._dirty).length; },
   };
 }
 </script>
