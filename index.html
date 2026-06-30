@@ -348,6 +348,7 @@
                 @error="$el.style.display='none'">
               <div x-show="!p.image_urls || !p.image_urls.length" class="absolute inset-0 flex items-center justify-center text-3xl" style="color: var(--line)">👕</div>
               <span class="absolute top-2 right-2 pill" :class="p.stock > 0 ? 'pill-good' : 'pill-bad'" x-text="p.stock > 0 ? `${p.stock}` : 'OOS'"></span>
+              <span x-show="p.is_promotion" class="absolute top-2 left-2 pill text-[9px] text-white" style="background: var(--accent)">🏷️ Promo</span>
             </div>
             <div class="p-3">
               <div class="num text-xs font-bold" x-text="p.item_code"></div>
@@ -804,6 +805,32 @@
               style="border-color: var(--line)">
           </div>
 
+          <!-- PROMOTION (stock edit) -->
+          <div class="card p-3 mb-3 space-y-2" :style="stockEditPromo ? 'border: 1.5px solid var(--accent)' : ''">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" x-model="stockEditPromo" class="w-4 h-4 accent-orange-600">
+              <span class="text-sm font-semibold">🏷️ Promotion ပစ္စည်း</span>
+            </label>
+            <div x-show="stockEditPromo" x-transition class="space-y-2 pt-1">
+              <div>
+                <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">Promo အမျိုးအစား</label>
+                <select x-model="stockEditPromoCategory" class="w-full px-2 py-2 rounded border text-sm bg-white" style="border-color: var(--line)">
+                  <option value="">—</option>
+                  <option value="Flash Sale">Flash Sale</option>
+                  <option value="Clearance">Clearance</option>
+                  <option value="New Arrival Promo">New Arrival Promo</option>
+                  <option value="Bundle">Bundle</option>
+                  <option value="Seasonal">Seasonal</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">Promo စျေး (Ks)</label>
+                <input type="number" inputmode="numeric" x-model.number="stockEditPromoPrice" placeholder="9000"
+                  class="num w-full px-3 py-2 rounded-lg border bg-white text-base font-bold mt-1" style="border-color: var(--line)">
+              </div>
+            </div>
+          </div>
+
           <div class="flex gap-2 mt-4">
             <button @click="stockModal=null" class="tap flex-1 py-3 rounded-xl font-semibold border" style="border-color: var(--line); color: var(--muted)">
               မလုပ်တော့
@@ -882,6 +909,9 @@ function dashboard() {
     stockModal: null,
     stockEditPrice: 0,
     stockEditStock: 0,
+    stockEditPromo: false,
+    stockEditPromoCategory: '',
+    stockEditPromoPrice: null,
     stockSaving: false,
 
     // upload
@@ -1092,6 +1122,9 @@ function dashboard() {
       this.stockModal = p;
       this.stockEditPrice = Number(p.price || 0);
       this.stockEditStock = Number(p.stock || 0);
+      this.stockEditPromo = !!p.is_promotion;
+      this.stockEditPromoCategory = p.promotion_category || '';
+      this.stockEditPromoPrice = p.promotion_price ?? null;
     },
     async saveStockEdit() {
       if (!this.stockModal) return;
@@ -1100,7 +1133,10 @@ function dashboard() {
         await this.rpc('update_stock', {
           p_variant_id: this.stockModal.variant_id,
           p_price: Number(this.stockEditPrice),
-          p_stock: Number(this.stockEditStock)
+          p_stock: Number(this.stockEditStock),
+          p_is_promotion: !!this.stockEditPromo,
+          p_promotion_category: this.stockEditPromo ? (this.stockEditPromoCategory || null) : null,
+          p_promotion_price: this.stockEditPromo ? (this.stockEditPromoPrice ?? null) : null
         });
         this.showToast('ဈေး/Stock ပြင်ပြီးပါပြီ', 'good');
         this.stockModal = null;
