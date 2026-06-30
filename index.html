@@ -435,11 +435,109 @@
           </button>
         </div>
 
+        <!-- BULK ACTIONS PANEL -->
+        <div class="card p-3 space-y-3" style="border: 1.5px solid var(--accent)">
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" :checked="allSelected" @change="toggleSelectAll()" class="w-4 h-4 accent-orange-600">
+              <span class="text-sm font-semibold">အားလုံးရွေး</span>
+            </label>
+            <span class="text-xs" style="color: var(--muted)">
+              <span class="num font-bold" x-text="selectedCount"></span> ခု ရွေးထား
+            </span>
+          </div>
+
+          <div x-show="selectedCount > 0" x-transition class="space-y-3 pt-1 border-t" style="border-color: var(--line)">
+            <div class="text-[11px] uppercase tracking-wider font-semibold" style="color: var(--muted)">ရွေးထားသည့် ပစ္စည်းများကို တစ်ပြိုင်နက် —</div>
+
+            <!-- Bulk category -->
+            <div class="grid grid-cols-3 gap-2 items-end">
+              <div class="col-span-2">
+                <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">အမျိုးအစား</label>
+                <select x-model="bulk.category" class="w-full px-2 py-1.5 rounded border text-sm bg-white" style="border-color: var(--line)">
+                  <option value="">—</option>
+                  <option value="ပါတိတ်">ပါတိတ်</option>
+                  <option value="ထဘီ">ထဘီ</option>
+                  <option value="ဝမ်းဆက်">ဝမ်းဆက်</option>
+                  <option value="အိမ်နေဝတ်စုံ">အိမ်နေဝတ်စုံ</option>
+                  <option value="အခြား">အခြား</option>
+                </select>
+              </div>
+              <button @click="applyBulkCategory()" :disabled="!bulk.category" class="tap py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-40" style="background: var(--ink)">ထည့်</button>
+            </div>
+
+            <!-- Bulk price -->
+            <div class="grid grid-cols-3 gap-2 items-end">
+              <div class="col-span-2">
+                <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">စျေး (Ks)</label>
+                <input type="number" x-model.number="bulk.price" min="0" placeholder="12000" class="num w-full px-2 py-1.5 rounded border text-sm" style="border-color: var(--line)">
+              </div>
+              <button @click="applyBulkPrice()" :disabled="!bulk.price || bulk.price <= 0" class="tap py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-40" style="background: var(--ink)">ထည့်</button>
+            </div>
+
+            <!-- Bulk size -->
+            <div class="grid grid-cols-3 gap-2 items-end">
+              <div class="col-span-2">
+                <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">Size</label>
+                <select x-model="bulk.size" class="w-full px-2 py-1.5 rounded border text-sm bg-white" style="border-color: var(--line)">
+                  <option value="">—</option>
+                  <option value="Free">Free</option>
+                  <option value="S">S</option><option value="M">M</option><option value="L">L</option>
+                  <option value="XL">XL</option><option value="XXL">XXL</option>
+                  <option value="M-L">M-L</option><option value="L-XL">L-XL</option>
+                </select>
+              </div>
+              <button @click="applyBulkSize()" :disabled="!bulk.size" class="tap py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-40" style="background: var(--ink)">ထည့်</button>
+            </div>
+
+            <!-- Bulk PROMOTION -->
+            <div class="rounded-lg p-2.5 space-y-2" style="background: #fff4ed; border: 1px solid #ffd9bf">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold" style="color: var(--accent)">🏷️ Promotion</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <button @click="applyBulkPromo(true)" class="tap py-1.5 rounded-lg text-xs font-semibold text-white" style="background: var(--accent)">Promotion သတ်မှတ်</button>
+                <button @click="applyBulkPromo(false)" class="tap py-1.5 rounded-lg text-xs font-semibold border" style="border-color: var(--line); color: var(--muted)">ဖြုတ်</button>
+              </div>
+              <div class="grid grid-cols-3 gap-2 items-end">
+                <div class="col-span-2">
+                  <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">Promo အမျိုးအစား</label>
+                  <select x-model="bulk.promotion_category" class="w-full px-2 py-1.5 rounded border text-sm bg-white" style="border-color: var(--line)">
+                    <option value="">—</option>
+                    <option value="Flash Sale">Flash Sale</option>
+                    <option value="Clearance">Clearance</option>
+                    <option value="New Arrival Promo">New Arrival Promo</option>
+                    <option value="Bundle">Bundle</option>
+                    <option value="Seasonal">Seasonal</option>
+                  </select>
+                </div>
+                <button @click="applyBulkPromoCategory()" :disabled="!bulk.promotion_category" class="tap py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-40" style="background: var(--ink)">ထည့်</button>
+              </div>
+              <div class="grid grid-cols-3 gap-2 items-end">
+                <div class="col-span-2">
+                  <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">Promo စျေး (Ks)</label>
+                  <input type="number" x-model.number="bulk.promotion_price" min="0" placeholder="9000" class="num w-full px-2 py-1.5 rounded border text-sm" style="border-color: var(--line)">
+                </div>
+                <button @click="applyBulkPromoPrice()" :disabled="!bulk.promotion_price || bulk.promotion_price <= 0" class="tap py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-40" style="background: var(--ink)">ထည့်</button>
+              </div>
+            </div>
+
+            <button @click="saveSelected()" :disabled="bulkSaving" class="tap w-full py-2 rounded-lg text-xs font-bold text-white disabled:opacity-50" style="background: var(--accent)">
+              <span x-show="!bulkSaving">ရွေးထားသမျှ Save (<span class="num" x-text="selectedCount"></span>)</span>
+              <span x-show="bulkSaving">Saving…</span>
+            </button>
+          </div>
+        </div>
+
         <template x-for="d in drafts" :key="d.draft_id">
-          <div class="card overflow-hidden" :class="d._justSaved ? 'ring-2 ring-green-300' : ''" style="transition: all 0.3s">
+          <div class="card overflow-hidden" :class="d._justSaved ? 'ring-2 ring-green-300' : (d._selected ? 'ring-2 ring-orange-400' : '')" style="transition: all 0.3s">
             <div class="flex">
               <div class="w-28 h-28 bg-zinc-100 shrink-0 relative">
                 <img :src="d.public_url" class="w-full h-full object-cover" loading="lazy" @error="$el.style.display='none'">
+                <label class="absolute top-1 left-1 cursor-pointer">
+                  <input type="checkbox" x-model="d._selected" class="w-5 h-5 accent-orange-600 rounded shadow">
+                </label>
+                <span x-show="d.is_promotion" class="absolute top-1 right-1 pill text-[9px] text-white" style="background: var(--accent)">🏷️ Promo</span>
                 <div class="absolute bottom-1 left-1 right-1 text-center">
                   <span x-show="d._saved && !d._dirty" class="pill pill-good text-[9px]">✓ Saved</span>
                   <span x-show="!d._saved || d._dirty" class="pill pill-warn text-[9px]">Unsaved</span>
@@ -530,6 +628,31 @@
               <div>
                 <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">ပစ္စည်းအကြောင်း</label>
                 <textarea x-model="d.knowledge" @input="markDirty(d)" rows="2" placeholder="အပူသိပ်/နွေသုံး/ပိုးထည် စသဖြင့်" class="w-full px-2 py-1.5 rounded border text-sm resize-none" style="border-color: var(--line)"></textarea>
+              </div>
+
+              <!-- PER-CARD PROMOTION -->
+              <div class="rounded-lg p-2.5 space-y-2" :style="d.is_promotion ? 'background: #fff4ed; border: 1px solid var(--accent)' : 'background: var(--surface); border: 1px solid var(--line)'">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" x-model="d.is_promotion" @change="markDirty(d)" class="w-4 h-4 accent-orange-600">
+                  <span class="text-xs font-semibold">🏷️ Promotion ပစ္စည်း</span>
+                </label>
+                <div x-show="d.is_promotion" x-transition class="grid grid-cols-2 gap-2 pt-1">
+                  <div>
+                    <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">Promo အမျိုးအစား</label>
+                    <select x-model="d.promotion_category" @change="markDirty(d)" class="w-full px-2 py-1.5 rounded border text-sm bg-white" style="border-color: var(--line)">
+                      <option value="">—</option>
+                      <option value="Flash Sale">Flash Sale</option>
+                      <option value="Clearance">Clearance</option>
+                      <option value="New Arrival Promo">New Arrival Promo</option>
+                      <option value="Bundle">Bundle</option>
+                      <option value="Seasonal">Seasonal</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-[10px] uppercase tracking-wider" style="color: var(--muted)">Promo စျေး (Ks)</label>
+                    <input type="number" x-model.number="d.promotion_price" @input="markDirty(d)" min="0" placeholder="9000" class="num w-full px-2 py-1.5 rounded border text-sm" style="border-color: var(--line)">
+                  </div>
+                </div>
               </div>
 
               <div class="flex gap-2 pt-1">
@@ -769,6 +892,8 @@ function dashboard() {
     uploadingCount: 0,
     drafts: [],
     publishing: false,
+    bulkSaving: false,
+    bulk: { category: '', price: null, size: '', promotion_category: '', promotion_price: null },
 
     // ui
     toast: '',
@@ -1056,6 +1181,10 @@ function dashboard() {
           chest_max: d.chest_max ?? null,
           waist_min: d.waist_min ?? null,
           waist_max: d.waist_max ?? null,
+          is_promotion: d.is_promotion ?? false,
+          promotion_category: d.promotion_category || '',
+          promotion_price: d.promotion_price ?? null,
+          _selected: false,
           _saved: d.status === 'edited' || d.status === 'approved',
           _dirty: false,
           _saving: false,
@@ -1075,9 +1204,9 @@ function dashboard() {
       if (!d.price || Number(d.price) <= 0) return 'စျေးနှုန်း ထည့်';
       return null;
     },
-    async saveDraft(d) {
+    async saveDraft(d, silent = false) {
       const err = this.validateDraft(d);
-      if (err) { this.showToast(err, 'bad'); return; }
+      if (err) { if (!silent) this.showToast(err, 'bad'); return; }
       d._saving = true;
       try {
         const patch = {
@@ -1092,6 +1221,9 @@ function dashboard() {
           weight_min: d.weight_min, weight_max: d.weight_max,
           chest_min: d.chest_min, chest_max: d.chest_max,
           waist_min: d.waist_min, waist_max: d.waist_max,
+          is_promotion: !!d.is_promotion,
+          promotion_category: d.is_promotion ? (d.promotion_category || null) : null,
+          promotion_price: d.is_promotion ? (d.promotion_price ?? null) : null,
           arrival_date: this.uploadDate
         };
         await fetch(CONFIG.N8N_BASE + '/webhook/uthuya-drafts-api', {
@@ -1103,9 +1235,10 @@ function dashboard() {
         d._dirty = false;
         d._justSaved = true;
         setTimeout(() => { d._justSaved = false; }, 1500);
-        this.showToast('Save လုပ်ပြီး', 'good');
+        if (!silent) this.showToast('Save လုပ်ပြီး', 'good');
       } catch (e) {
-        this.showToast('Save မရ', 'bad');
+        if (!silent) this.showToast('Save မရ', 'bad');
+        if (silent) throw e;
       } finally {
         d._saving = false;
       }
@@ -1147,6 +1280,59 @@ function dashboard() {
         this.publishing = false;
       }
     },
+    // bulk select + actions
+    get selectedDrafts() { return this.drafts.filter(d => d._selected); },
+    get selectedCount() { return this.selectedDrafts.length; },
+    get allSelected() { return this.drafts.length > 0 && this.drafts.every(d => d._selected); },
+    toggleSelectAll() {
+      const target = !this.allSelected;
+      this.drafts.forEach(d => { d._selected = target; });
+    },
+    applyBulkCategory() {
+      this.selectedDrafts.forEach(d => { d.category = this.bulk.category; this.markDirty(d); });
+      this.showToast(`${this.selectedCount} ခု အမျိုးအစား ထည့်ပြီး`, 'good');
+    },
+    applyBulkPrice() {
+      this.selectedDrafts.forEach(d => { d.price = this.bulk.price; this.markDirty(d); });
+      this.showToast(`${this.selectedCount} ခု စျေး ထည့်ပြီး`, 'good');
+    },
+    applyBulkSize() {
+      this.selectedDrafts.forEach(d => { d.size = this.bulk.size; this.markDirty(d); });
+      this.showToast(`${this.selectedCount} ခု Size ထည့်ပြီး`, 'good');
+    },
+    applyBulkPromo(flag) {
+      this.selectedDrafts.forEach(d => {
+        d.is_promotion = flag;
+        if (!flag) { d.promotion_category = ''; d.promotion_price = null; }
+        this.markDirty(d);
+      });
+      this.showToast(flag ? `${this.selectedCount} ခု Promotion သတ်မှတ်ပြီး` : `${this.selectedCount} ခု Promotion ဖြုတ်ပြီး`, flag ? 'good' : 'warn');
+    },
+    applyBulkPromoCategory() {
+      const sel = this.selectedDrafts.filter(d => d.is_promotion);
+      if (!sel.length) { this.showToast('Promotion သတ်မှတ်ထားတဲ့ ပစ္စည်း မရှိ', 'bad'); return; }
+      sel.forEach(d => { d.promotion_category = this.bulk.promotion_category; this.markDirty(d); });
+      this.showToast(`${sel.length} ခု Promo အမျိုးအစား ထည့်ပြီး`, 'good');
+    },
+    applyBulkPromoPrice() {
+      const sel = this.selectedDrafts.filter(d => d.is_promotion);
+      if (!sel.length) { this.showToast('Promotion သတ်မှတ်ထားတဲ့ ပစ္စည်း မရှိ', 'bad'); return; }
+      sel.forEach(d => { d.promotion_price = this.bulk.promotion_price; this.markDirty(d); });
+      this.showToast(`${sel.length} ခု Promo စျေး ထည့်ပြီး`, 'good');
+    },
+    async saveSelected() {
+      const sel = this.selectedDrafts;
+      if (!sel.length) { this.showToast('ရွေးထားတဲ့ ပစ္စည်း မရှိ', 'bad'); return; }
+      this.bulkSaving = true;
+      let ok = 0, fail = 0;
+      for (const d of sel) {
+        if (this.validateDraft(d)) { fail++; continue; }
+        try { await this.saveDraft(d, true); ok++; } catch (e) { fail++; }
+      }
+      this.bulkSaving = false;
+      this.showToast(`${ok} ခု Save ပြီး${fail ? ` • ${fail} ခု မရ` : ''}`, fail ? 'warn' : 'good');
+    },
+
     get readyCount() { return this.drafts.filter(d => d._saved && !d._dirty).length; },
     get unsavedCount() { return this.drafts.filter(d => !d._saved || d._dirty).length; },
   };
